@@ -41,7 +41,7 @@ document.getElementById('eodForm').addEventListener('submit', function (e) {
     hurdles: hurdles
   };
 
-  fetch('YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE', {
+  fetch('https://script.google.com/macros/s/AKfycbzdkSt-Zk7W7ZlGuOwIaHaKHlet3x4ILNX5Hm6RW0X3NXvjM6-hqoZ6EfKa4C80MruDNQ/exec', {
     method: 'POST',
     body: JSON.stringify(payload),
     headers: { 'Content-Type': 'application/json' }
