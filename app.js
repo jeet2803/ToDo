@@ -1,44 +1,85 @@
 let todaysTasks = [];
 
-document.getElementById('taskForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const input = document.getElementById('todayTasks').value;
-  todaysTasks = input.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+function addTask() {
+  const input = document.getElementById("newTaskInput");
+  const taskText = input.value.trim();
+  if (taskText === "") return;
 
-  const listDiv = document.getElementById('taskList');
-  listDiv.innerHTML = '<h5>Select Task Status:</h5>';
-  
+  todaysTasks.push({ text: taskText, status: "" });
+  input.value = "";
+  renderTaskList();
+}
+
+function renderTaskList() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
   todaysTasks.forEach((task, index) => {
-    const group = document.createElement('div');
-    group.className = 'mb-2';
-    group.innerHTML = `
-      <strong>${task}</strong>
-      <select class="form-select mt-1" id="status-${index}">
-        <option value="Completed">Completed</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Pending">Pending</option>
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    li.innerHTML = `
+      ${task.text}
+      <span class="badge bg-secondary">${task.status || "Not updated"}</span>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function saveTasks() {
+  if (todaysTasks.length === 0) {
+    alert("Please add at least one task.");
+    return;
+  }
+  document.getElementById("morningForm").style.display = "none";
+  document.getElementById("eodForm").style.display = "block";
+  renderStatusDropdowns();
+}
+
+function renderStatusDropdowns() {
+  const container = document.getElementById("statusList");
+  container.innerHTML = "";
+
+  todaysTasks.forEach((task, index) => {
+    const card = document.createElement("div");
+    card.className = "card task-card p-3";
+
+    card.innerHTML = `
+      <strong>${task.text}</strong>
+      <select class="form-select mt-2" id="status-${index}">
+        <option value="">Select Status</option>
+        <option value="Completed">✅ Completed</option>
+        <option value="In Progress">🔄 In Progress</option>
+        <option value="Pending">⏸️ Pending</option>
       </select>
     `;
-    listDiv.appendChild(group);
+    container.appendChild(card);
   });
-});
+}
 
-document.getElementById('eodForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-
+function submitEOD() {
+  let allUpdated = true;
   let yesterdayTasks = "";
-  for (let i = 0; i < todaysTasks.length; i++) {
-    const status = document.getElementById(`status-${i}`).value;
-    yesterdayTasks += `${todaysTasks[i]} (${status})\n`;
+
+  todaysTasks.forEach((task, index) => {
+    const status = document.getElementById(`status-${index}`).value;
+    if (!status) {
+      allUpdated = false;
+    }
+    task.status = status;
+    yesterdayTasks += `${task.text} (${status})\n`;
+  });
+
+  if (!allUpdated) {
+    alert("Please select status for all tasks.");
+    return;
   }
 
-  const hurdles = document.getElementById('hurdles').value;
+  const hurdles = document.getElementById("hurdlesInput").value.trim();
 
   const payload = {
     date: new Date().toISOString().split('T')[0],
-    yesterdayTasks: yesterdayTasks,
-    todayTasks: todaysTasks.join("\n"),
-    hurdles: hurdles
+    yesterdayTasks,
+    todayTasks: todaysTasks.map(t => t.text).join("\n"),
+    hurdles: hurdles || "None"
   };
 
   fetch('https://script.google.com/macros/s/AKfycbzdkSt-Zk7W7ZlGuOwIaHaKHlet3x4ILNX5Hm6RW0X3NXvjM6-hqoZ6EfKa4C80MruDNQ/exec', {
@@ -49,9 +90,10 @@ document.getElementById('eodForm').addEventListener('submit', function (e) {
   .then(res => res.text())
   .then(() => {
     alert("Submitted successfully!");
+    location.reload();
   })
   .catch(err => {
     console.error(err);
     alert("Failed to submit.");
   });
-});
+}
